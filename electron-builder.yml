@@ -1,0 +1,64 @@
+appId: com.googlemessages.windows
+productName: Messages
+copyright: Copyright © 2026 Dustin Olenslager
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - src/**/*
+  - assets/**/*
+  - "!**/*.map"
+  - "!node_modules/**"
+
+# ─── Windows targets ──────────────────────────────────────────────────────────
+# Primary target is ARM64 (Snapdragon X / Windows on ARM). x64 is also buildable
+# via `npm run build:x64`.
+win:
+  target:
+    - target: nsis
+      arch:
+        - arm64
+    - target: portable
+      arch:
+        - arm64
+  icon: build/icon.ico
+  # No code signing configured — installer is unsigned. SmartScreen may warn on
+  # first run until the app builds reputation or a certificate is added here.
+
+# ─── NSIS installer ───────────────────────────────────────────────────────────
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Messages
+  runAfterFinish: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  artifactName: Messages-Setup-${version}-${arch}.${ext}
+  uninstallDisplayName: Messages (Google Messages for Windows)
+
+# ─── Portable (no-install) build ──────────────────────────────────────────────
+portable:
+  artifactName: Messages-${version}-${arch}-portable.${ext}
+
+# ─── Protocol handlers ────────────────────────────────────────────────────────
+protocols:
+  - name: SMS Handler
+    schemes:
+      - sms
+  - name: TEL Handler
+    schemes:
+      - tel
+
+# Do not rebuild native deps from source; none are used.
+npmRebuild: false
+buildDependenciesFromSource: false
+
+extraMetadata:
+  main: src/main/main.js

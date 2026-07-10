@@ -7,10 +7,15 @@ directories:
   buildResources: build
 
 files:
+  # NOTE: do NOT add "!node_modules/**" here — that would exclude the production
+  # dependencies (electron-log, electron-store, electron-auto-launch) from the
+  # packaged app.asar and the app would crash with "Cannot find module ...".
+  # electron-builder bundles production dependencies automatically; dev deps
+  # (electron, electron-builder, cross-env) are excluded automatically.
   - src/**/*
   - assets/**/*
+  - package.json
   - "!**/*.map"
-  - "!node_modules/**"
 
 # ─── Windows targets ──────────────────────────────────────────────────────────
 # Primary target is ARM64 (Snapdragon X / Windows on ARM). x64 is also buildable

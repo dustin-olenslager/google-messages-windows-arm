@@ -34,7 +34,11 @@ scripts/        — generate-ico.js packs the PNGs into .ico (no external tools)
 - Protocol registration uses the `process.defaultApp` dev-path form so `sms://`/`tel://`
   resolve both when packaged and when running `electron .`
 - Windows icons are `.ico` (multi-res), generated from PNGs by `scripts/generate-ico.js`
-  which embeds PNGs directly in the ICO container — no ImageMagick/Inkscape needed
+  — no ImageMagick/Inkscape needed. Frames < 256px are classic uncompressed BMP/DIB,
+  256px is PNG. PNG-compressed frames below 256px pass every low-level icon API
+  (LoadIcon, SHGetFileInfo, even SHGetImageList/SHIL_JUMBO) but Explorer's actual
+  desktop/taskbar icon *paint* path silently falls back to a generic glyph for them —
+  BMP for the small sizes is the only format that reliably renders everywhere.
 - `app.setBadgeCount` is a no-op on Windows; unread count is surfaced via tray tooltip
 - On window close → hide to tray; only tray Quit / Ctrl+Q actually exits
 - Single instance lock; second launch focuses existing window and parses argv for
@@ -53,6 +57,19 @@ scripts/        — generate-ico.js packs the PNGs into .ico (no external tools)
 - Auto-updater: stubbed only (hook comment in main.js) — not implemented
 - Installer is unsigned — SmartScreen warns until a cert is added to electron-builder.yml
 - DevTools only available when unpackaged or NODE_ENV=development
+- **Never build/install from inside a sandboxed agent shell (e.g. an MSIX-packaged
+  Claude Code session).** Windows silently redirects any packaged process's writes to
+  `%LOCALAPPDATA%\Programs\...` (and `HKCU` installer registry entries) into that
+  package's private `%LOCALAPPDATA%\Packages\<PFN>\LocalCache\...` folder. From
+  *inside* the sandbox everything reads back as correct (same content, same
+  SHGetFileInfo/SHGetImageList results) — but the real interactive Explorer can't
+  see that folder at all, so shortcuts/icons/taskbar pins silently never resolve
+  (Explorer's own "Change Icon" dialog reports "Windows can't find the file" for the
+  real path). Symptom: exe/window icon is correct, but desktop/Start Menu/taskbar
+  icons stay a generic blank page no matter how many icon/thumbnail caches you purge
+  or how many times you restart explorer.exe/dwm.exe. Fix: run `npm run build`
+  wherever, but always run the resulting `dist\*-Setup-*.exe` installer by hand from
+  a normal (non-sandboxed) Explorer/terminal window, not via agent automation.
 
 ## Conventions
 - Explicit try/catch on all async Electron ops

@@ -1,7 +1,7 @@
-# AGENTS.md — Google Messages Windows (Electron)
+# AGENTS.md — Google Messages Windows on ARM (Electron)
 
 ## Project
-Electron desktop wrapper for https://messages.google.com/web targeting Windows 10/11, with a native **ARM64** build for Windows on ARM (Snapdragon X) plus an x64 build. Ported from `google-messages-ubuntu`.
+Electron desktop wrapper for https://messages.google.com/web targeting Windows 10/11, with a native **ARM64** build for Windows on ARM (Snapdragon X) plus an x64 build. Repo: `google-messages-windows-arm`. Ported from `google-messages-ubuntu`.
 
 ## Stack
 - Electron (29.x)
@@ -17,7 +17,9 @@ Electron desktop wrapper for https://messages.google.com/web targeting Windows 1
 ```
 src/main/       — main process modules (Node/Electron)
 src/renderer/   — renderer-side HTML/JS (error page)
-assets/icons/   — PNG icon sizes (16–512) + icon.svg source
+assets/icons/   — PNG icon sizes (16–512), rasterized from the official
+                  Google Messages logo (messages.google.com PWA manifest,
+                  messages_2022_round_512dp.png); 512.png is the source
 assets/icon.ico — multi-res Windows icon (generated; window + tray)
 build/icon.ico  — multi-res Windows icon (generated; exe + installer)
 scripts/        — generate-ico.js packs the PNGs into .ico (no external tools)

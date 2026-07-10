@@ -1,11 +1,11 @@
-# Google Messages for Windows
+# Google Messages for Windows on ARM
 
-> A native-feeling Google Messages desktop app for Windows — built for **Windows on ARM (Snapdragon X)** and x64, with Electron.
+> A native-feeling Google Messages desktop app built for **Windows on ARM (Snapdragon X)** — with an x64 build too. Made with Electron.
 
 Use Google Messages (RCS, SMS, MMS) on your Windows desktop with full system integration: toast notifications, system tray, protocol handlers, and persistent sessions.
 
-[![Platform](https://img.shields.io/badge/platform-Windows%2011-0078D6?logo=windows11&logoColor=white)](https://github.com/dustin-olenslager/google-messages-windows)
-[![Arch](https://img.shields.io/badge/arch-ARM64%20%7C%20x64-4B4B4B)](https://github.com/dustin-olenslager/google-messages-windows)
+[![Platform](https://img.shields.io/badge/platform-Windows%2011-0078D6?logo=windows11&logoColor=white)](https://github.com/dustin-olenslager/google-messages-windows-arm)
+[![Arch](https://img.shields.io/badge/arch-ARM64%20%7C%20x64-4B4B4B)](https://github.com/dustin-olenslager/google-messages-windows-arm)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Electron](https://img.shields.io/badge/electron-29-47848f?logo=electron)](https://www.electronjs.org/)
 
@@ -50,7 +50,7 @@ This app wraps the official Google Messages web interface and wires it into Wind
 
 ### Option 1 — Installer (recommended)
 
-Download the latest `Messages-Setup-*-arm64.exe` from [Releases](https://github.com/dustin-olenslager/google-messages-windows/releases) and run it. The NSIS installer lets you choose the install location and creates Start Menu + desktop shortcuts.
+Download the latest `Messages-Setup-*-arm64.exe` from [Releases](https://github.com/dustin-olenslager/google-messages-windows-arm/releases) and run it. The NSIS installer lets you choose the install location and creates Start Menu + desktop shortcuts.
 
 > The installer is unsigned, so Windows SmartScreen may show a "Windows protected your PC" prompt on first run. Click **More info → Run anyway**.
 
@@ -63,8 +63,8 @@ Download `Messages-*-arm64-portable.exe` and run it directly — no installation
 Requirements: [Node.js 18+](https://nodejs.org/) (an **arm64** build on Windows on ARM).
 
 ```powershell
-git clone https://github.com/dustin-olenslager/google-messages-windows.git
-cd google-messages-windows
+git clone https://github.com/dustin-olenslager/google-messages-windows-arm.git
+cd google-messages-windows-arm
 npm install
 npm run generate-ico     # build the .ico from the PNG sources
 npm start                # run in development

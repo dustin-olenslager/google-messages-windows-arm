@@ -6,6 +6,20 @@ Format: `Added | Changed | Fixed | Removed` — present tense, with commit hash 
 
 ---
 
+## [1.0.1] — 2026-07-10
+
+### Changed
+- Rename project to `google-messages-windows-arm` to make the ARM focus explicit
+- Replace the placeholder icon with the official Google Messages logo (rasterized
+  from the messages.google.com PWA manifest, `messages_2022_round_512dp.png`),
+  regenerating `assets/icons/*.png` and the multi-res `icon.ico`
+
+### Fixed
+- Packaged app crashed on launch with "Cannot find module 'electron-log'":
+  the `files` list excluded `node_modules`, so production dependencies were not
+  bundled into `app.asar`. Removed the exclusion (electron-builder bundles
+  production deps automatically) and added `package.json` to the files list.
+
 ## [1.0.0] — 2026-07-09
 
 Initial Windows release — ported from [google-messages-ubuntu](https://github.com/dustin-olenslager/google-messages-ubuntu).

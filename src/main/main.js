@@ -44,12 +44,30 @@ const APP_USER_MODEL_ID = 'com.googlemessages.windows';
 const MESSAGES_URL = 'https://messages.google.com/web';
 const MESSAGES_HOST = 'messages.google.com';
 
+// Hosts the app is allowed to navigate to in-window. Google account sign-in
+// (used for pairing without a QR code) redirects through accounts.google.com,
+// so it must stay in-window — punting it to the system browser strands the
+// flow in a session that can never hand its cookies back to us.
+const ALLOWED_HOSTS = [MESSAGES_HOST, 'accounts.google.com'];
+
 // isDev: true when running unpackaged (`electron .`) or with NODE_ENV=development.
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 
-// Keep the Windows Chrome UA current — this is what prevents Google from serving
-// a degraded experience or blocking the session entirely.
-const CHROME_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+// Google's sign-in blocks "embedded browsers" ("Couldn't sign you in — this
+// browser or app may not be secure"). The trigger is the `Electron/x.y.z`
+// token Chromium puts in the UA, so we present a plain Chrome UA instead.
+//
+// The version is taken from the Chromium we are actually running so the UA can
+// never drift out of sync with the engine — a UA claiming a Chrome version that
+// does not match the renderer's behaviour is itself a detection signal.
+const CHROME_UA =
+    `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ` +
+    `Chrome/${process.versions.chrome} Safari/537.36`;
+
+// Must be set before any BrowserWindow or session exists. Unlike a webRequest
+// header rewrite, this covers every surface that matters: outgoing headers,
+// `navigator.userAgent` as seen by page scripts, subframes and popups.
+app.userAgentFallback = CHROME_UA;
 
 const ASSETS_DIR = path.join(__dirname, '..', '..', 'assets');
 const WINDOW_ICON = path.join(ASSETS_DIR, 'icon.ico');
@@ -135,10 +153,7 @@ function createWindow() {
             sandbox: true,
             // Disable throttling so notifications fire when window is backgrounded.
             backgroundThrottling: false,
-            allowRunningInsecureContent: false,
-            // Spoof UA at the WebPreferences level as belt-and-suspenders;
-            // we also set it on the session below.
-            userAgent: CHROME_UA
+            allowRunningInsecureContent: false
         }
     });
 
@@ -195,12 +210,8 @@ function createWindow() {
 // ─── Session configuration ────────────────────────────────────────────────────
 function configureSession() {
     const ses = session.fromPartition('persist:messages');
-
-    // Override UA on all requests from this session.
-    ses.webRequest.onBeforeSendHeaders((details, callback) => {
-        details.requestHeaders['User-Agent'] = CHROME_UA;
-        callback({ requestHeaders: details.requestHeaders });
-    });
+    ses.setUserAgent(CHROME_UA);
+    log.info('Session UA:', CHROME_UA);
 }
 
 // ─── Navigation security ──────────────────────────────────────────────────────
@@ -212,10 +223,9 @@ function setupNavigation(win) {
     function isSafeUrl(url) {
         try {
             const parsed = new URL(url);
-            return (
-                (parsed.hostname === MESSAGES_HOST ||
-                    parsed.hostname.endsWith('.' + MESSAGES_HOST)) &&
-                (parsed.protocol === 'https:' || parsed.protocol === 'http:')
+            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+            return ALLOWED_HOSTS.some(
+                (host) => parsed.hostname === host || parsed.hostname.endsWith('.' + host)
             );
         } catch {
             return false;
@@ -234,12 +244,16 @@ function setupNavigation(win) {
 
     // New window requests (target=_blank, window.open, etc.)
     wc.setWindowOpenHandler(({ url }) => {
-        if (!isSafeUrl(url)) {
+        if (isSafeUrl(url)) {
+            // Sign-in opens the account chooser via window.open. We never open a
+            // second BrowserWindow, so follow it in the main window instead —
+            // denying outright would make the popup silently do nothing.
+            wc.loadURL(url).catch((err) => log.error('In-window open failed:', url, err));
+        } else {
             shell.openExternal(url).catch((err) =>
                 log.error('External window open failed:', url, err)
             );
         }
-        // Never open a second BrowserWindow.
         return { action: 'deny' };
     });
 

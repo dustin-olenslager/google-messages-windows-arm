@@ -7,7 +7,7 @@ Use Google Messages (RCS, SMS, MMS) on your Windows desktop with full system int
 [![Platform](https://img.shields.io/badge/platform-Windows%2011-0078D6?logo=windows11&logoColor=white)](https://github.com/dustin-olenslager/google-messages-windows-arm)
 [![Arch](https://img.shields.io/badge/arch-ARM64%20%7C%20x64-4B4B4B)](https://github.com/dustin-olenslager/google-messages-windows-arm)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Electron](https://img.shields.io/badge/electron-29-47848f?logo=electron)](https://www.electronjs.org/)
+[![Electron](https://img.shields.io/badge/electron-43-47848f?logo=electron)](https://www.electronjs.org/)
 
 > This is the Windows port of [google-messages-ubuntu](https://github.com/dustin-olenslager/google-messages-ubuntu).
 

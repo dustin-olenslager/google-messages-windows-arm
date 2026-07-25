@@ -1,7 +1,7 @@
 {
   "name": "google-messages-windows-arm",
   "productName": "Messages",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Google Messages desktop app for Windows on ARM (Snapdragon X), with an x64 build too",
   "main": "src/main/main.js",
   "scripts": {
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^29.1.0",
+    "electron": "^43.2.0",
     "electron-builder": "^24.13.3"
   }
 }

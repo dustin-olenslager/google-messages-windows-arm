@@ -74,3 +74,11 @@ scripts/        — generate-ico.js packs the PNGs into .ico (no external tools)
 ## Conventions
 - Explicit try/catch on all async Electron ops
 - CHANGELOG.md tracks all changes
+
+## Agent Debugging Principles
+- Verify the active checkout first with `git rev-parse --show-toplevel`; do not clone the remote until the local repository is proven absent.
+- For runtime bugs, inspect the running executable, version, user-data path, logs, and live behavior before researching or editing source.
+- Reproduce once, then separate stale state, cache, session, network, and external-service failures from source defects.
+- Prefer the smallest evidence-backed fix; do not add speculative code or push a no-op commit.
+- Before committing or pushing, inspect the final diff and confirm that it contains the intended source change.
+- Every session with Dustin MUST end by adding a concrete lesson learned to this file. If no new lesson exists, record that explicitly instead of inventing one.

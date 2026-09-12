@@ -6,6 +6,24 @@ Format: `Added | Changed | Fixed | Removed` — present tense, with commit hash 
 
 ---
 
+## [1.0.3] — 2026-09-11
+
+### Fixed
+- **Google sign-in still failed with "Couldn't sign you in — this browser or
+  app may not be secure"** even after the 1.0.2 UA fix. The UA string was never
+  the whole story: Electron defines `window.chrome` but leaves it **empty**,
+  while real Chrome exposes `app`, `csi` and `loadTimes` on it. Google's
+  sign-in script reads that object directly, so a spoofed UA sitting on top of
+  an empty `window.chrome` still reads as an embedded browser.
+
+  The preload now populates `window.chrome` at document-start in the main world
+  (via `webFrame.executeJavaScript`, since `contextIsolation` keeps the preload
+  out of the page's world). Verified against the live site: submitting an email
+  with the UA spoof alone lands on `accounts.google.com/v3/signin/rejected`;
+  with `window.chrome` populated the same submission returns the normal
+  "Couldn't find this account" response. Bisected against client-hint, reduced
+  UA and `Accept-Language` variations — none of those changed the outcome.
+
 ## [1.0.2] — 2026-07-25
 
 ### Fixed

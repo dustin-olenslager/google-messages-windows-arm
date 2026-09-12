@@ -30,6 +30,12 @@ scripts/        — generate-ico.js packs the PNGs into .ico (no external tools)
 - `app.setAppUserModelId('com.googlemessages.windows')` set early — REQUIRED on
   Windows so toast notifications and the taskbar group attribute to this app
 - UA spoofed to current Chrome **Windows** — prevents Google degrading the experience
+- Google sign-in ALSO requires `window.chrome` to be populated. Electron defines
+  `window.chrome` but empty; Chrome exposes `app`/`csi`/`loadTimes`. Google's
+  sign-in script reads it and blocks the flow as an embedded browser otherwise.
+  `src/main/preload.js` installs a main-world shim at document-start via
+  `webFrame.executeJavaScript` (preload is isolated by `contextIsolation`, so it
+  cannot touch `window` directly). UA spoof alone is NOT sufficient — verified.
 - `isDev = !app.isPackaged || NODE_ENV === 'development'` (no `NODE_ENV=` inline on cmd)
 - Protocol registration uses the `process.defaultApp` dev-path form so `sms://`/`tel://`
   resolve both when packaged and when running `electron .`
@@ -82,3 +88,19 @@ scripts/        — generate-ico.js packs the PNGs into .ico (no external tools)
 - Prefer the smallest evidence-backed fix; do not add speculative code or push a no-op commit.
 - Before committing or pushing, inspect the final diff and confirm that it contains the intended source change.
 - Every session with Dustin MUST end by adding a concrete lesson learned to this file. If no new lesson exists, record that explicitly instead of inventing one.
+
+## Lessons Learned
+- **2026-09-11**: A UA-string spoof is not enough to defeat Google's embedded-browser
+  gate. The 1.0.2 fix set `app.userAgentFallback` and verified only that the
+  *identifier page loaded* — but Google rejects at the **post-submit** step
+  (`/v3/signin/rejected`), which the 1.0.2 verification never exercised. The real
+  gate was an empty `window.chrome` (Electron leaves it empty; Chrome populates
+  it), a JS-visible signal the UA never touches. Lesson: verify against the
+  *final* page of the failing flow, not the first one; and when a client is
+  fingerprinted, diff the JS-visible environment against real Chrome, not just
+  the network headers. Bisect each candidate to the smallest sufficient fix.
+- **2026-09-11**: To write to the page's main world from a preload under
+  `contextIsolation: true`, use `webFrame.executeJavaScript(src)` from the
+  preload. A preload's own `window` is the isolated world and mutating it does
+  nothing the page can see. Injecting via `dom-ready` is too late — the app's
+  shim runs at preload time (document-start).

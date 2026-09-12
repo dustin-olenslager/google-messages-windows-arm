@@ -12,7 +12,66 @@
  *  3. Expose a minimal API for renderer error page interactions.
  */
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
+
+// ─── 0. Chrome identity shim (main world) ────────────────────────────────────
+// Google's sign-in refuses any client it classifies as an embedded browser
+// ("Couldn't sign you in — this browser or app may not be secure"). Spoofing
+// the UA string (see main.js) is not enough: Electron defines `window.chrome`
+// but leaves it EMPTY, while real Chrome exposes `app`, `csi` and `loadTimes`
+// on it. An empty `window.chrome` is a long-standing "this is Electron" tell,
+// and Google's sign-in script reads it directly.
+//
+// Verified against the live site: submitting an email with the UA spoof alone
+// redirects to accounts.google.com/v3/signin/rejected; populating
+// `window.chrome` makes the same submission return the normal
+// "Couldn't find this account" response. Bisected — client-hint/UA/language
+// variations were tested and did not change the outcome.
+//
+// contextIsolation keeps this script out of the page's world, so the shim is
+// evaluated in the main world via webFrame.executeJavaScript — before any page
+// script runs (preload executes at document-start).
+const chromeIdentityShim = `(() => {
+    try {
+        if (!window.chrome || Object.keys(window.chrome).length === 0) {
+            Object.defineProperty(window, 'chrome', {
+                value: {
+                    app: {
+                        isInstalled: false,
+                        InstallState: { DISABLED: 'disabled', INSTALLED: 'installed', NOT_INSTALLED: 'not_installed' },
+                        RunningState: { CANNOT_RUN: 'cannot_run', READY_TO_RUN: 'ready_to_run', RUNNING: 'running' },
+                        getDetails: () => null,
+                        getIsInstalled: () => false
+                    },
+                    csi: () => ({ onloadT: Date.now(), startE: Date.now(), pageT: 1, tran: 15 }),
+                    loadTimes: () => ({
+                        requestTime: Date.now() / 1000,
+                        startLoadTime: Date.now() / 1000,
+                        commitLoadTime: Date.now() / 1000,
+                        finishDocumentLoadTime: Date.now() / 1000,
+                        finishLoadTime: Date.now() / 1000,
+                        firstPaintTime: Date.now() / 1000,
+                        firstPaintAfterLoadTime: 0,
+                        navigationType: 'Other',
+                        wasFetchedViaSpdy: true,
+                        wasNpnNegotiated: true,
+                        npnNegotiatedProtocol: 'h2',
+                        wasAlternateProtocolAvailable: false,
+                        connectionInfo: 'h2'
+                    })
+                },
+                writable: true,
+                configurable: true
+            });
+        }
+    } catch (e) {}
+})();`;
+
+try {
+    webFrame.executeJavaScript(chromeIdentityShim);
+} catch (err) {
+    console.warn('[preload] Could not install chrome identity shim:', err);
+}
 
 // ─── 1. Intercept Web Notification API ───────────────────────────────────────
 // Google Messages uses the browser Notification API. We replace it with a
